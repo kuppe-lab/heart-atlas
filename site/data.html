@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Data Viewer</title>
+    
+    <!-- 1. Use Pico "Conditional" Version -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.conditional.min.css">
+    
+    <!-- 2. Material Icons & Vitessce CSS -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://unpkg.com/vitessce@latest/dist/css/index.css">
+
+    <style>
+        /* Global resets: Mimic Pico's font on the body so unstyled areas match */
+        body { 
+            margin: 0; 
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, sans-serif;
+            color: #2d3138; /* Pico's default dark grey */
+        }
+
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding-left: 1rem; 
+            padding-right: 1rem; 
+        }
+
+        /* Clean Viewer Styles */
+        #viewer { 
+            height: 800px; 
+            width: 100%; 
+            margin-top: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        /* Styles specifically for the Pico-styled controls */
+        .pico .sample-info { margin-bottom: 2rem; }
+        .pico .sample-selector-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .pico .sample-selector-row label { margin: 0; flex-shrink: 0; }
+        .pico .sample-selector-row select { flex: 1; max-width: 300px; }
+        .pico #loading { text-align: center; padding: 3rem; }
+        
+        .pico .sample-metadata { 
+            background-color: var(--pico-card-background-color); 
+            padding: 1rem; 
+            border-radius: 0.5rem; 
+            margin-bottom: 1rem; 
+            /* Ensure text color inherits from Pico */
+            color: var(--pico-color);
+        }
+        .pico .sample-metadata dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; }
+        .pico .sample-metadata dt { font-weight: bold; }
+        .pico .sample-metadata dd { margin: 0; }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER WRAPPER: Styles the Nav -->
+    <header class="pico">
+        <nav class="container">
+            <ul>
+                <li><strong>Spatial Transcriptomics Project</strong></li>
+            </ul>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="data.html?sample=01">Explore Data</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        
+        <!-- CONTROLS WRAPPER: Styles the Dropdowns and Text -->
+        <div class="pico">
+            <h1>Interactive Sample Viewer</h1>
+            
+            <div class="sample-info">
+                <div class="sample-selector-row">
+                    <label for="sample-selector">Select Sample:</label>
+                    <select id="sample-selector" onchange="location.href='?sample=' + this.value.padStart(2, '0')">
+                        <option value="1">Sample 01 - Lorem Control Group A</option>
+                        <option value="2">Sample 02 - Lorem Treatment Group A</option>
+                        <option value="3">Sample 03 - Ipsum Control Group B</option>
+                        <option value="4">Sample 04 - Ipsum Treatment Group B</option>
+                        <option value="5">Sample 05 - Dolor Control Group C</option>
+                        <option value="6">Sample 06 - Dolor Treatment Group C</option>
+                        <option value="7">Sample 07 - Sit Control Group D</option>
+                        <option value="8">Sample 08 - Sit Treatment Group D</option>
+                        <option value="9">Sample 09 - Amet Control Group E</option>
+                        <option value="10">Sample 10 - Amet Treatment Group E</option>
+                        <option value="11">Sample 11 - Consectetur Control Group F</option>
+                        <option value="12">Sample 12 - Consectetur Treatment Group F</option>
+                        <option value="13">Sample 13 - Adipiscing Control Group G</option>
+                        <option value="14">Sample 14 - Adipiscing Treatment Group G</option>
+                        <option value="15">Sample 15 - Elite Control Group H</option>
+                        <option value="16">Sample 16 - Elite Treatment Group H</option>
+                        <option value="17">Sample 17 - Sed Control Group I</option>
+                        <option value="18">Sample 18 - Sed Treatment Group I</option>
+                        <option value="19">Sample 19 - Tempor Control Group J</option>
+                        <option value="20">Sample 20 - Tempor Treatment Group J</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="sample-metadata" id="metadata">
+                <h2 id="sample-title">Loading...</h2>
+                <dl>
+                    <dt>Sample ID:</dt>
+                    <dd id="sample-id">-</dd>
+                    <dt>Condition:</dt>
+                    <dd id="sample-condition">-</dd>
+                    <dt>Tissue Type:</dt>
+                    <dd id="sample-tissue">-</dd>
+                    <dt>Total Cells:</dt>
+                    <dd id="sample-cells">-</dd>
+                </dl>
+                <p id="sample-description" style="margin-top: 1rem;"></p>
+            </div>
+            
+            <div id="loading" aria-busy="true">Loading viewer...</div>
+        </div>
+        <!-- END CONTROLS WRAPPER -->
+
+        <!-- VIEWER: Completely Outside of .pico (Pure CSS/Vitessce) -->
+        <div id="viewer"></div>
+
+    </main>
+
+    <!-- FOOTER WRAPPER -->
+    <div class="pico">
+        <footer class="container">
+            <hr>
+            <p><small>© 2024 Lorem Research Institute | Use arrow keys or select dropdown to navigate between samples</small></p>
+        </footer>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom": "https://esm.sh/react-dom@18.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+          "vitessce": "https://unpkg.com/vitessce@latest"
+        }
+      }
+    </script>
+    <script type="module">
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { Vitessce } from 'vitessce';
+
+      const sampleMetadata = {
+        '01': { condition: 'Control', tissue: 'Cortex Region A', cells: '12,547' },
+        '02': { condition: 'Treatment', tissue: 'Cortex Region A', cells: '11,892' },
+        '03': { condition: 'Control', tissue: 'Cortex Region B', cells: '13,201' },
+        '04': { condition: 'Treatment', tissue: 'Cortex Region B', cells: '12,678' },
+        '05': { condition: 'Control', tissue: 'Cortex Region C', cells: '11,334' },
+        '06': { condition: 'Treatment', tissue: 'Cortex Region C', cells: '12,445' },
+        '07': { condition: 'Control', tissue: 'Cortex Region D', cells: '13,556' },
+        '08': { condition: 'Treatment', tissue: 'Cortex Region D', cells: '12,123' },
+        '09': { condition: 'Control', tissue: 'Cortex Region E', cells: '11,789' },
+        '10': { condition: 'Treatment', tissue: 'Cortex Region E', cells: '12,901' },
+        '11': { condition: 'Control', tissue: 'Cortex Region F', cells: '13,012' },
+        '12': { condition: 'Treatment', tissue: 'Cortex Region F', cells: '11,567' },
+        '13': { condition: 'Control', tissue: 'Cortex Region G', cells: '12,234' },
+        '14': { condition: 'Treatment', tissue: 'Cortex Region G', cells: '13,345' },
+        '15': { condition: 'Control', tissue: 'Cortex Region H', cells: '11,456' },
+        '16': { condition: 'Treatment', tissue: 'Cortex Region H', cells: '12,789' },
+        '17': { condition: 'Control', tissue: 'Cortex Region I', cells: '13,678' },
+        '18': { condition: 'Treatment', tissue: 'Cortex Region I', cells: '11,234' },
+        '19': { condition: 'Control', tissue: 'Cortex Region J', cells: '12,890' },
+        '20': { condition: 'Treatment', tissue: 'Cortex Region J', cells: '13,123' }
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      const sampleNum = parseInt(params.get('sample') || '1');
+      const sampleId = String(sampleNum).padStart(2, '0');
+      
+      document.getElementById('sample-selector').value = sampleNum;
+      
+      const meta = sampleMetadata[sampleId];
+      if (meta) {
+        document.getElementById('sample-title').textContent = `Sample ${sampleId}`;
+        document.getElementById('sample-id').textContent = sampleId;
+        document.getElementById('sample-condition').textContent = meta.condition;
+        document.getElementById('sample-tissue').textContent = meta.tissue;
+        document.getElementById('sample-cells').textContent = meta.cells;
+        document.getElementById('sample-description').textContent = 
+            `Lorem ipsum dolor sit amet, consectetur adipiscing elit. This sample represents ${meta.condition.toLowerCase()} tissue from ${meta.tissue.toLowerCase()}. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`;
+      }
+
+      const config = {
+        "name": `Sample ${sampleId} - Spatial Transcriptomics`,
+        "description": `Interactive visualization of sample ${sampleId}`,
+        "version": "1.0.15",
+        "initStrategy": "auto",
+        "datasets": [
+          {
+            "uid": "codeluppi",
+            "name": "Codeluppi",
+            "files": [
+              {
+                "fileType": "obsSegmentations.json",
+                "url": "https://data-1.vitessce.io/0.0.33/main/codeluppi-2018/codeluppi_2018_nature_methods.cells.segmentations.json"
+              },
+              {
+                "fileType": "obsLocations.csv",
+                "url": "https://data-1.vitessce.io/0.0.33/main/codeluppi-2018/codeluppi_2018_nature_methods.cells.csv",
+                "options": {
+                  "obsIndex": "cell_id",
+                  "obsLocations": ["X", "Y"]
+                },
+                "coordinationValues": {
+                  "obsType": "cell"
+                }
+              },
+              {
+                "fileType": "obsEmbedding.csv",
+                "url": "https://data-1.vitessce.io/0.0.33/main/codeluppi-2018/codeluppi_2018_nature_methods.cells.csv",
+                "options": {
+                  "obsIndex": "cell_id",
+                  "obsEmbedding": ["PCA_1", "PCA_2"]
+                },
+                "coordinationValues": {
+                  "obsType": "cell",
+                  "embeddingType": "PCA"
+                }
+              },
+              {
+                "fileType": "obsEmbedding.csv",
+                "url": "https://data-1.vitessce.io/0.0.33/main/codeluppi-2018/codeluppi_2018_nature_methods.cells.csv",
+                "options": {
+                  "obsIndex": "cell_id",
+                  "obsEmbedding": ["TSNE_1", "TSNE_2"]
+                },
+                "coordinationValues": {
+                  "obsType": "cell",
+                  "embeddingType": "t-SNE"
+                }
+              },
+              {
+                "fileType": "obsSets.csv",
+                "url": "https://data-1.vitessce.io/0.0.33/main/codeluppi-2018/codeluppi_2018_nature_methods.cells.csv",
+                "options": {
+                  "obsIndex": "cell_id",
+                  "obsSets": [
+                    {
+                      "name": "Cell Type",
+                      "column": ["Cluster", "Subcluster"]
+                    }
+                  ]
+                },
+                "coordinationValues": {
+                  "obsType": "cell"
+                }
+              },
+              {
+                "fileType": "obsLocations.csv",
+                "url": "https://data-1.vitessce.io/0.0.33/main/codeluppi-2018/codeluppi_2018_nature_methods.molecules.csv",
+                "options": {
+                  "obsIndex": "molecule_id",
+                  "obsLocations": ["X", "Y"]
+                },
+                "coordinationValues": {
+                  "obsType": "molecule"
+                }
+              },
+              {
+                "fileType": "obsLabels.csv",
+                "url": "https://data-1.vitessce.io/0.0.33/main/codeluppi-2018/codeluppi_2018_nature_methods.molecules.csv",
+                "options": {
+                  "obsIndex": "molecule_id",
+                  "obsLabels": "Gene"
+                },
+                "coordinationValues": {
+                  "obsType": "molecule"
+                }
+              },
+              {
+                "fileType": "obsFeatureMatrix.csv",
+                "url": "https://data-1.vitessce.io/0.0.33/main/codeluppi-2018/codeluppi_2018_nature_methods.cells.matrix.csv",
+                "coordinationValues": {
+                  "obsType": "cell",
+                  "featureType": "gene",
+                  "featureValueType": "expression"
+                }
+              },
+              {
+                "fileType": "image.raster.json",
+                "options": {
+                  "schemaVersion": "0.0.2",
+                  "images": [
+                    {
+                      "name": "Image",
+                      "url": "https://vitessce-data.storage.googleapis.com/0.0.31/master_release/linnarsson/linnarsson.images.zarr",
+                      "type": "zarr",
+                      "metadata": {
+                        "dimensions": [
+                          {
+                            "field": "channel",
+                            "type": "nominal",
+                            "values": ["polyT", "nuclei"]
+                          },
+                          {
+                            "field": "y",
+                            "type": "quantitative",
+                            "values": null
+                          },
+                          {
+                            "field": "x",
+                            "type": "quantitative",
+                            "values": null
+                          }
+                        ],
+                        "isPyramid": true,
+                        "transform": {
+                          "translate": { "y": 0, "x": 0 },
+                          "scale": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "coordinationSpace": {
+          "embeddingZoom": {
+            "PCA": 0,
+            "TSNE": 0.75
+          },
+          "embeddingType": {
+            "PCA": "PCA",
+            "TSNE": "t-SNE"
+          },
+          "spatialZoom": {
+            "A": -5.5
+          },
+          "spatialTargetX": {
+            "A": 16000
+          },
+          "spatialTargetY": {
+            "A": 20000
+          },
+          "spatialSegmentationLayer": {
+            "A": {
+              "opacity": 1,
+              "radius": 0,
+              "visible": true,
+              "stroked": false
+            }
+          },
+          "spatialPointLayer": {
+            "A": {
+              "opacity": 1,
+              "radius": 20,
+              "visible": true
+            }
+          }
+        },
+        "layout": [
+          {
+            "component": "description",
+            "props": {
+              "description": `Sample ${sampleId}: Lorem ipsum dolor sit amet spatial transcriptomics`
+            },
+            "x": 0,
+            "y": 0,
+            "w": 2,
+            "h": 1
+          },
+          {
+            "component": "layerController",
+            "coordinationScopes": {
+              "spatialSegmentationLayer": "A",
+              "spatialPointLayer": "A"
+            },
+            "x": 0,
+            "y": 1,
+            "w": 2,
+            "h": 4
+          },
+          {
+            "component": "status",
+            "x": 0,
+            "y": 5,
+            "w": 2,
+            "h": 1
+          },
+          {
+            "component": "spatial",
+            "coordinationScopes": {
+              "spatialZoom": "A",
+              "spatialTargetX": "A",
+              "spatialTargetY": "A",
+              "spatialSegmentationLayer": "A",
+              "spatialPointLayer": "A"
+            },
+            "props": {
+              "channelNamesVisible": true
+            },
+            "x": 2,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          {
+            "component": "featureList",
+            "x": 9,
+            "y": 0,
+            "w": 3,
+            "h": 2
+          },
+          {
+            "component": "obsSets",
+            "x": 9,
+            "y": 3,
+            "w": 3,
+            "h": 2
+          },
+          {
+            "component": "heatmap",
+            "props": {
+              "transpose": true
+            },
+            "x": 2,
+            "y": 4,
+            "w": 5,
+            "h": 2
+          },
+          {
+            "component": "obsSetFeatureValueDistribution",
+            "x": 7,
+            "y": 4,
+            "w": 5,
+            "h": 2
+          },
+          {
+            "component": "scatterplot",
+            "coordinationScopes": {
+              "embeddingType": "PCA",
+              "embeddingZoom": "PCA"
+            },
+            "x": 6,
+            "y": 0,
+            "w": 3,
+            "h": 2
+          },
+          {
+            "component": "scatterplot",
+            "coordinationScopes": {
+              "embeddingType": "TSNE",
+              "embeddingZoom": "TSNE"
+            },
+            "x": 6,
+            "y": 2,
+            "w": 3,
+            "h": 2
+          }
+        ]
+      };
+
+      document.getElementById('loading').style.display = 'none';
+
+      const root = createRoot(document.getElementById('viewer'));
+      root.render(React.createElement(Vitessce, {
+        height: 800,
+        theme: 'light',
+        config: config
+      }));
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' && sampleNum > 1) {
+          location.href = `?sample=${String(sampleNum - 1).padStart(2, '0')}`;
+        } else if (e.key === 'ArrowRight' && sampleNum < 20) {
+          location.href = `?sample=${String(sampleNum + 1).padStart(2, '0')}`;
+        }
+      });
+    </script>
+</body>
+</html>
